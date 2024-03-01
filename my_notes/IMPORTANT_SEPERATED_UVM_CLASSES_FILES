@@ -1,0 +1,3 @@
+HOW TO SEPERATE UVM CLASSES INTO DIFFERENT FILES IN VIVADO:
+- make sure to `include "test.sv" - which is the file where uvm_test_top child class was defined in
+- make sure to right click in any file -> Hierarchy Update -> choose automactic update and compile order (NOT automatic update, Manual compile order ditconmemay)
