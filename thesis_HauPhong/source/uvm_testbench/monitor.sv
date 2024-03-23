@@ -32,13 +32,14 @@ class monitor extends uvm_monitor;
     // Run phase
     virtual task run_phase(uvm_phase phase);
         forever begin
-            @(posedge vif.clk);
-            if(vif.rst || vif.clr) begin
+            @(posedge vif.clk);           
+            tr.op = vif.op;         
+            if(tr.op == RESET) begin
                 tr.rst = 1'b1;
                 tr.clr = 1'b1;
                 `uvm_info("MON", "SYSTEM RESET DETECTED", UVM_NONE);
             end 
-            else if(!vif.rst && !vif.clr) begin
+            else begin
                     tr.rst         = 1'b0;
                     tr.clr         = 1'b0;       
                     tr.load_weight = vif.load_weight;                    
@@ -69,6 +70,7 @@ class monitor extends uvm_monitor;
     // Monitor Display Method
     task mdisplay(transaction tr);
         `uvm_info("MON", "--------------------------------------Transaction Info--------------------------------------", UVM_NONE)
+        `uvm_info("MON", $sformatf("op          = %s", tr.op.name), UVM_NONE)
         `uvm_info("MON", $sformatf("rst         = %0h", tr.rst), UVM_NONE)
         `uvm_info("MON", $sformatf("clr         = %0h", tr.clr), UVM_NONE)
         `uvm_info("MON", $sformatf("load_weight = %0h", tr.load_weight), UVM_NONE)

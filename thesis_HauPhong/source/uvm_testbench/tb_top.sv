@@ -6,6 +6,8 @@ import uvm_pkg::*;
 //////////////////////////////////////////////////////////////////////////////////
 
 interface pe_conv_mac_datapath_if();
+  oper_mode op;
+
   logic         clk;
   logic         rst;
   logic         clr;

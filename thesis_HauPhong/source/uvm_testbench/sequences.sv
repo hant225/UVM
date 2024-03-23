@@ -49,6 +49,7 @@ class std_seq extends uvm_sequence#(transaction);
         
                 ultra_ram_pos++;
                 if(i < pULTRA_RAM_NUM * pKERNEL_NUM) begin
+                    tr.op = MEM_KERNEL_LOAD;
                     if(ultra_ram_pos == 4) begin
                         this.weight_addr = this.weight_addr + 32'h1;
                         ultra_ram_pos = 0;
@@ -56,9 +57,11 @@ class std_seq extends uvm_sequence#(transaction);
                     `uvm_info("STD_SEQ", "----------------------------------[KERNEL LOADING]----------------------------------", UVM_NONE)
                 end 
                 else if (i != no_cycles - 1) begin
+                    tr.op = MEM_BIAS_LOAD;
                     this.weight_addr = this.weight_addr + 32'h1;
                     `uvm_info("STD_SEQ", "----------------------------------[BIAS LOADING]----------------------------------", UVM_NONE)
                 end else begin
+                    tr.op = MEM_SCALE_LOAD;
                     tr.dequant_en = 1'b1; 
                     this.weight_addr = this.weight_addr + 32'h1;
                     `uvm_info("STD_SEQ", "----------------------------------[SCALE LOADING]----------------------------------", UVM_NONE)
@@ -70,6 +73,7 @@ class std_seq extends uvm_sequence#(transaction);
     
     // Create Data Sequence Method
     task create_data_seq(transaction tr);
+        tr.op = DATA_IN_LOAD;
         for(int i = 0; i < trans_amount; i++) begin
             start_item(tr);
                 assert(tr.randomize());

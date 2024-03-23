@@ -8,9 +8,9 @@ import uvm_pkg::*;
 // adder tree assump need 1 cycles (one pixel)
 // dequantize needs 9 cycles
 // bias needs 1 cycle
-// activation needs 5 cycles
+// activation needs 3 cycles
 // quantize need 1 cycles
-// 5 + 1 + 1 + 9 + 1 + 5 + 1 = 23 cycles to get data_out result
+// 5 + 1 + 1 + 9 + 1 + 3 + 1 = 20 cycles to get data_out result
 //////////////////////////////////////////////////////////////////////////////////
 
 class driver extends uvm_driver#(transaction);
@@ -43,7 +43,8 @@ class driver extends uvm_driver#(transaction);
     task drive();
         reset_DUT();
         forever begin
-            seq_item_port.get_next_item(tr);               
+            seq_item_port.get_next_item(tr);   
+                vif.op          <= tr.op;
                 vif.rst         <= 1'b0;
                 vif.clr         <= 1'b0;                
                 vif.weight_data <= tr.weight_data;      // data for kernel in load weight | data for dequantize scale            
@@ -75,6 +76,7 @@ class driver extends uvm_driver#(transaction);
     // DUT reset
     task reset_DUT();
         repeat(5) begin 
+            vif.op          <= RESET;
             vif.rst         <= 1'b1;
             vif.clr         <= 1'b1;
             @(posedge vif.clk);
@@ -85,6 +87,7 @@ class driver extends uvm_driver#(transaction);
     // Driver Display()
     task ddisplay(transaction tr);
         `uvm_info("DRV", "--------------------------------------Transaction Info--------------------------------------", UVM_NONE)
+        `uvm_info("DRV", $sformatf("op          = %s", tr.op.name), UVM_NONE)
         `uvm_info("DRV", $sformatf("rst         = %0h", tr.rst), UVM_NONE)
         `uvm_info("DRV", $sformatf("clr         = %0h", tr.clr), UVM_NONE)
         `uvm_info("DRV", $sformatf("load_weight = %0h", tr.load_weight), UVM_NONE)

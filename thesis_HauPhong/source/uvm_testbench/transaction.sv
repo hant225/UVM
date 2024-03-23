@@ -3,9 +3,16 @@
 import uvm_pkg::*;
 
 //////////////////////////////////////////////////////////////////////////////////
-
+typedef enum bit[3:0] { RESET,
+                        MEM_KERNEL_LOAD,
+                        MEM_BIAS_LOAD,
+                        MEM_SCALE_LOAD,
+                        DATA_IN_LOAD} oper_mode;
+                        
+                        
 class transaction extends uvm_sequence_item;
     // Properties
+    oper_mode op;
           logic         rst;
           logic         clr;
           logic         load_weight;
