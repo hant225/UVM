@@ -31,21 +31,22 @@ class std_seq extends uvm_sequence#(transaction);
     virtual task body();
         set_response_queue_error_report_disabled(1);
         tr = transaction::type_id::create("tr");
-        load_weight(tr);
-        `uvm_info("STD_SEQ", "Memory Weights Load Finished. Start Generating Transaction Data!\n", UVM_NONE)
+        do_load_weight(tr);
+        `uvm_info("STD_SEQ", "Memory Weights Load Finished. Start Generating Transaction Data!", UVM_NONE)
         create_data_seq(tr);       
     endtask
     
     // Weight Load Method
-    task load_weight(transaction tr);
+    task do_load_weight(transaction tr);
         for(int i = 0; i < no_cycles; i++) begin
             start_item(tr);
             ///////////////////////////////////////////////////////////////                
                 assert(tr.randomize());
-                tr.rst         = 1'b0;
-                tr.clr         = 1'b0;
-                tr.load_weight = 1'b1;
-                tr.weight_addr = this.weight_addr;     
+                tr.rst          = 1'b0;
+                tr.en           = 1'b0;
+                tr.buffer_in_en = 1'b1;
+                tr.load_weight  = 1'b1;
+                tr.weight_addr  = this.weight_addr;     
         
                 ultra_ram_pos++;
                 if(i < pULTRA_RAM_NUM * pKERNEL_NUM) begin
@@ -62,7 +63,6 @@ class std_seq extends uvm_sequence#(transaction);
                     `uvm_info("STD_SEQ", "----------------------------------[BIAS LOADING]----------------------------------", UVM_NONE)
                 end else begin
                     tr.op = MEM_SCALE_LOAD;
-                    tr.dequant_en = 1'b1; 
                     this.weight_addr = this.weight_addr + 32'h1;
                     `uvm_info("STD_SEQ", "----------------------------------[SCALE LOADING]----------------------------------", UVM_NONE)
                 end
@@ -73,25 +73,17 @@ class std_seq extends uvm_sequence#(transaction);
     
     // Create Data Sequence Method
     task create_data_seq(transaction tr);
-        tr.op = DATA_IN_LOAD;
+        tr.op = RUNNING; 
         for(int i = 0; i < trans_amount; i++) begin
             start_item(tr);
-                assert(tr.randomize());
-                tr.data_in = 8'd12;
-                
-                tr.rst         = 1'b0;
-                tr.clr         = 1'b0;
-                tr.en          = 1'b1;
-                tr.load_weight = 1'b0;
-                tr.adder_en    = 1'b1;
-                tr.dequant_en  = 1'b1;
-                tr.bias_en     = 1'b1;
-                tr.act_en      = 1'b1;
-                tr.quant_en    = 1'b1;                
-                `uvm_info("STD_SEQ", $sformatf("[%0d] Transaction Generated: data_in=%0h", i, tr.data_in), UVM_NONE)
+                assert(tr.randomize());                
+                tr.rst          = 1'b0;
+                tr.buffer_in_en = 1'b1;
+                tr.en           = 1'b1;    
+                tr.load_weight  = 1'b0;           
+                `uvm_info("STD_SEQ", $sformatf("[No.%0d] Transaction Generated: data_in = %0h", i, tr.data_in), UVM_NONE)
             finish_item(tr);
         end
     endtask
 endclass
-
 

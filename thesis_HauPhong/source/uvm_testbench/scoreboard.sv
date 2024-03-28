@@ -52,9 +52,8 @@ class scoreboard extends uvm_monitor;
         `uvm_info("SCB", "SYSTEM RESET", UVM_NONE)
         fd = $fopen(virtual_mem_path, "w");
         if(fd) begin
-            `uvm_info("SCB", "VIRTUAL MEMORY FILE CREATED!",UVM_NONE)
+            `uvm_info("SCB", $sformatf("VIRTUAL MEMORY FILE READY TO WRITE: %s", virtual_mem_path),UVM_NONE)
             $fdisplay(fd, "%s", file_header);
-            $display("%s", file_header);
         end else    
             `uvm_error("SCB", "UNABLE TO CREATE VIRTUAL MEMORY FILE!")
         $fclose(fd);
@@ -62,12 +61,12 @@ class scoreboard extends uvm_monitor;
     
     // Mirroring Ram Method
     function void mirror_mem(transaction tr);
-        `uvm_info("SCB", $sformatf("[MEMORY MIRROR]  Weight Loaded: weight_addr = %0h , weight_data = %0h\n", tr.weight_addr, tr.weight_data), UVM_NONE);
+        `uvm_info("SCB", $sformatf("[MEMORY LOADING] Weight Loaded: weight_addr = %0h , weight_data = %8h_%8h", tr.weight_addr, tr.weight_data[63:32], tr.weight_data[31:0]), UVM_NONE)
         // manipulate weight data to write
-        i_weight_addr = tr.weight_addr;                         // convert logic to int
+        i_weight_addr = tr.weight_addr;                                 // convert logic to int
         modified_weight_data[63:32] = tr.weight_data[31:0];
         modified_weight_data[31:0]  = tr.weight_data[63:32];
-        virtual_mem[i_weight_addr].push_back(modified_weight_data);   // push to queue
+        virtual_mem[i_weight_addr].push_back(modified_weight_data);     // push to queue
         
         // write to file if load scale (last to load)
         if(tr.op == MEM_SCALE_LOAD) begin            
@@ -83,35 +82,15 @@ class scoreboard extends uvm_monitor;
                 end
             end    
             $fclose(fd);
+            `uvm_info("SCB", $sformatf("VIRTUAL MEMORY FILE CREATED: %s\n\n", virtual_mem_path), UVM_NONE)
         end
     endfunction
     
     // Result Checking Method
     function void checking_result(transaction tr);
         $display("CHECKING RESULT HERE");
-        sdisplay(tr);
+        tr.tr_display("SCB");
     endfunction
     
-    // Display Method
-    function void sdisplay(transaction tr);
-        `uvm_info("SCB", "--------------------------------------Transaction Info--------------------------------------", UVM_NONE)
-        `uvm_info("SCB", $sformatf("op          = %s", tr.op.name), UVM_NONE)
-        `uvm_info("SCB", $sformatf("rst         = %0h", tr.rst), UVM_NONE)
-        `uvm_info("SCB", $sformatf("clr         = %0h", tr.clr), UVM_NONE)
-        `uvm_info("SCB", $sformatf("load_weight = %0h", tr.load_weight), UVM_NONE)
-        `uvm_info("SCB", $sformatf("en          = %0h", tr.en), UVM_NONE)
-        `uvm_info("SCB", $sformatf("adder_en    = %0h", tr.adder_en), UVM_NONE)
-        `uvm_info("SCB", $sformatf("dequant_en  = %0h", tr.dequant_en), UVM_NONE)
-        `uvm_info("SCB", $sformatf("bias_en     = %0h", tr.bias_en), UVM_NONE)
-        `uvm_info("SCB", $sformatf("act_en      = %0h", tr.act_en), UVM_NONE)
-        `uvm_info("SCB", $sformatf("quant_en    = %0h", tr.quant_en), UVM_NONE)
-        `uvm_info("SCB", $sformatf("weight_addr = %0h", tr.weight_addr), UVM_NONE)
-        `uvm_info("SCB", $sformatf("weight_data = %0h  (Scale if load_weight = 0)", tr.weight_data), UVM_NONE)
-        `uvm_info("SCB", $sformatf("data_in     = %0h", tr.data_in), UVM_NONE)
-        `uvm_info("SCB", $sformatf("kernel_addr = %0h", tr.kernel_addr), UVM_NONE)
-        `uvm_info("SCB", $sformatf("data_out    = %0h", tr.data_out), UVM_NONE)
-        `uvm_info("SCB", "--------------------------------------------------------------------------------------------", UVM_NONE)
-    endfunction
 endclass
-
 

@@ -33,4 +33,3 @@ class agent extends uvm_agent;
     endfunction
 endclass
 
-
