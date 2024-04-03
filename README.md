@@ -9,7 +9,7 @@
 
 # The folder tree looks like below:
 
-vivado_project_dir
+vivado_project_dir 
 │
 ├── C_files
 │   └── hello_world.c
