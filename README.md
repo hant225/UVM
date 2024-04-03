@@ -14,15 +14,15 @@ vivado_project_dir
 ├── C_files  
 │   └── hello_world.c  
 ├── runDir   
-│   ├── xsc.log
-│   ├── xsc.pb
-│   └── xsim.dir
-│       └── work
-│           └── xsc
-│               ├── dpi.so
-│               └── hello_world.lnx64.o
-├── SCRIPTS
-│   ├── run_dpi_lib_create.tcl
-│   └── run_launch_sim.tcl
-│
-└── Others_vivado_auto_create_folders
+│   ├── xsc.log  
+│   ├── xsc.pb  
+│   └── xsim.dir  
+│       └── work  
+│           └── xsc  
+│               ├── dpi.so  
+│               └── hello_world.lnx64.o  
+├── SCRIPTS  
+│   ├── run_dpi_lib_create.tcl  
+│   └── run_launch_sim.tcl  
+│  
+└── Others_vivado_auto_create_folders  
