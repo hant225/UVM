@@ -9,11 +9,11 @@
 
 # The folder tree looks like below:
 
-vivado_project_dir 
-│
-├── C_files
-│   └── hello_world.c
-├── runDir
+vivado_project_dir   
+│   
+├── C_files  
+│   └── hello_world.c  
+├── runDir   
 │   ├── xsc.log
 │   ├── xsc.pb
 │   └── xsim.dir
