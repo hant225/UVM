@@ -16,7 +16,7 @@ set dest_dir [get_property directory [current_project]]/[current_project].sim/$a
 exec cp ./xsim.dir/work/xsc/dpi.so $dest_dir
 
 # xelab config
-set_property -name {xsim.elaborate.xelab.more_options} -value {-sv_lib "dpi.so"} -objects [get_filesets sim_for_test]
+set_property -name {xsim.elaborate.xelab.more_options} -value {-sv_lib "dpi.so"} -objects [get_filesets $active_sim_set]
 
 
 
