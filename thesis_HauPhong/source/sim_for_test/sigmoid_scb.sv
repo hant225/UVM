@@ -45,7 +45,7 @@ module sigmoid_scb;
             DATA_IN[15:0]  = $urandom();
             $display("DATA_IN = %f", $itor(DATA_IN)*(2.0**(-16.0)));
             #2000; 
-            $display("DATA_OUT = %f", $itor(DATA_OUT)*(2.0**(-16.0)));
+            $display("DATA_OUT = %f\n", $itor(DATA_OUT)*(2.0**(-16.0)));
         end
         #200 $finish;
     end
