@@ -1,0 +1,7 @@
+testcase:
++ weight  = 0 => data_out = bias
++ weight  = 1 => data_out = 1 + bias
++ data_in = 0 => data_out = BIAS
++ data_in = 1 => data_out = weight + bias
++ BIAS    = 0 => data_out = data_in convo to weight
++ buffer full or empty
