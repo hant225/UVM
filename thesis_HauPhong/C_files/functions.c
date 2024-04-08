@@ -102,8 +102,37 @@ void do_shift(svLogicVecVal *A, svBit do_shift_right, int shift_amount, svLogicV
     }
 }
 
+void test_thang(){
+    svLogicVecVal *tmp;
+    tmp->aval = 0b00000000000000100110000000000000;
+    printf("tmp = %0b\n", *tmp);
+    printf("tmp = %0d\n", *tmp);
+    svLogicVecVal tmp1;
+    svLogicVecVal tmp2;
+    svLogicVecVal tmp3;
+    tmp1.aval = 123;
+    tmp2.aval = 456;
+    tmp3.aval = 789;
 
+    svLogicVecVal fp_2_375;     
+    svLogicVecVal fp_0_84375; 
+    svLogicVecVal fp_0_625;     
+    svLogicVecVal fp_0_5;   
 
+    fp_2_375.aval   =  0b00000000000000100110000000000000;
+    fp_0_84375.aval =  0b00000000000000001101100000000000;
+    fp_0_625.aval   =  0b00000000000000001010000000000000;
+    fp_0_5.aval     =  0b00000000000000001000000000000000; 
+    printf("fp_2_375   aval: %b\n", fp_2_375  . aval);
+    printf("fp_2_375   bval: %b\n", fp_2_375  . bval);
+    printf("fp_0_84375 aval: %b\n", fp_0_84375.aval);
+    printf("fp_0_84375 bval: %b\n", fp_0_84375.bval);
+    printf("fp_0_625   aval: %b\n", fp_0_625  . aval);
+    printf("fp_0_625   bval: %b\n", fp_0_625  . bval);
+    printf("fp_0_5     aval: %b\n", fp_0_5    . aval);
+    printf("fp_0_5     bval: %b\n", fp_0_5    . bval);
+
+}
 
 
 
