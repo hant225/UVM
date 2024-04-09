@@ -12,6 +12,9 @@ void golden_model( svLogicVecVal *sigmoid_rslt, const svLogicVecVal *in) {
     copyIn->bval = in->bval;
     // do sigmoid function
     do_sigmoid(copyIn);
+    // copy value to send to SV
+    sigmoid_rslt->aval = copyIn->aval;
+    sigmoid_rslt->bval = copyIn->bval;
 }
 
 void do_sigmoid(svLogicVecVal *copyIn){
@@ -33,16 +36,19 @@ void do_sigmoid(svLogicVecVal *copyIn){
     svLogic sign_bit;
     svLogicVecVal plan_operand;
 
-    sign_bit = svGetBitselLogic(copyIn, 31);    // get sign bit 
-    if( abs(copyIn->aval) >= fp_5_0.aval ) {
-        copyIn->aval = 1;
+    copyIn->aval = abs(copyIn->aval);           // |x|
+    sign_bit = svGetBitselLogic(copyIn, 31);    // save the sign bit 
+    if( copyIn->aval >= fp_5_0.aval ) {
+        copyIn->aval = fp_1_0.aval;
+        copyIn->bval = fp_1_0.bval;
+	return;
     } 
-    else if( abs(copyIn->aval) >= fp_2_375.aval ) {
+    else if( copyIn->aval >= fp_2_375.aval ) {
         shift_amount = 5;
         plan_operand.aval = fp_0_84375.aval;	
         plan_operand.bval = fp_0_84375.bval;	
     } 
-    else if( abs(copyIn->aval) >= fp_1_0.aval ) {
+    else if( copyIn->aval >= fp_1_0.aval ) {
         shift_amount = 3;
         plan_operand.aval = fp_0_625.aval;	
         plan_operand.bval = fp_0_625.bval;	
@@ -52,12 +58,26 @@ void do_sigmoid(svLogicVecVal *copyIn){
         plan_operand.aval = fp_0_5.aval;	
         plan_operand.bval = fp_0_5.bval;	
     }
-    printf("shift amount : %0d\n", shift_amount);
-    printf("PLAN operand : %0d\n", plan_operand.aval);
-    printf("PLAN operand : %0b\n", plan_operand.aval);
+    
+    // Do shift
+    copyIn->aval >>= shift_amount;
+    copyIn->bval >>= shift_amount;
+    for(int i = 0; i < shift_amount; i++) 
+        svPutBitselLogic(copyIn, 32-shift_amount+i, sign_bit);		// add sign bits after shift as shift right remove right bits
+    // Add PLAN operand									
+    copyIn->aval += plan_operand.aval;
 }
 
 
+
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+// Function for testing things //////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
 void test_thang(){
     svLogicVecVal o1;
