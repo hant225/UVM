@@ -19,8 +19,9 @@ class std_seq extends uvm_sequence#(transaction);
     transaction tr;
     int no_cycles      = (pULTRA_RAM_NUM * pKERNEL_NUM) + pBLOCK_RAM_NUM + 1;              // (4 cycles * 9 channel) + 16 Bias + 1 for Scale
     int ultra_ram_pos  = 0;               // 4 ultra ram in total
-    int trans_amount   = 10;
-    logic [31:0] weight_addr = pBASE_WEIGHT_ADDR;
+    int invalid_trans_amount  = 3;        // transaction for buffer_in to start (24 cycles)
+    int valid_trans_amount    = 784;
+    logic [31:0] weight_addr  = pBASE_WEIGHT_ADDR;
     
     // Constructor
     function new(input string path = "std_seq");
@@ -74,7 +75,7 @@ class std_seq extends uvm_sequence#(transaction);
     // Create Data Sequence Method
     task create_data_seq(transaction tr);
         tr.op = RUNNING; 
-        for(int i = 0; i < trans_amount; i++) begin
+        for(int i = 0; i < invalid_trans_amount + valid_trans_amount; i++) begin
             start_item(tr);
                 assert(tr.randomize());                
                 tr.rst          = 1'b0;

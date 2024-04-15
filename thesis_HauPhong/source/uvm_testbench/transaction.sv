@@ -60,8 +60,8 @@ class transaction extends uvm_sequence_item;
         `uvm_info(class_name, $sformatf("buffer_in_en = %0b", this.buffer_in_en), UVM_NONE)
         `uvm_info(class_name, $sformatf("data_in      = %0h", this.data_in), UVM_NONE)
         `uvm_info(class_name, $sformatf("load_weight  = %0b", this.load_weight), UVM_NONE)
-        `uvm_info(class_name, $sformatf("weight_addr  = %0h", this.weight_addr), UVM_NONE)
-        `uvm_info(class_name, $sformatf("weight_data  = %0h", this.weight_data), UVM_NONE)
+        `uvm_info(class_name, $sformatf("weight_addr  = %0h - dunkare", this.weight_addr), UVM_NONE)
+        `uvm_info(class_name, $sformatf("weight_data  = %0h - dunkare", this.weight_data), UVM_NONE)
         if(class_name == "MON" || class_name == "SCB") begin
             `uvm_info(class_name, $sformatf("data_out     = %0h", this.data_out), UVM_NONE)
             `uvm_info(class_name, $sformatf("valid        = %0b", this.valid), UVM_NONE)
