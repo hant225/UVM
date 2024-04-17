@@ -5,6 +5,10 @@
 
 
 void do_sigmoid(svLogicVecVal *copyIn);
+void c_mac ( const svLogicVecVal *pixel_data, 
+	     const svLogicVecVal *weight_data, 
+	     const svLogicVecVal *reg_data,
+	     svLogicVecVal *mac_out );
 
 void golden_model( svLogicVecVal *sigmoid_rslt, const svLogicVecVal *in) {
     svLogicVecVal *copyIn;
@@ -68,7 +72,25 @@ void do_sigmoid(svLogicVecVal *copyIn){
     copyIn->aval += plan_operand.aval;
 }
 
+void c_mac ( const svLogicVecVal *pixel_data, 
+	     const svLogicVecVal *weight_data, 
+	     const svLogicVecVal *reg_data,
+	     svLogicVecVal *mac_out )
+{
+    svLogicVecVal *p;
+    svLogic sign_bit;
+    // do 8 bits mul, result is 16 bit
+    p->aval = pixel_data->aval * weight_data->aval;
+    p->bval = pixel_data->bval * weight_data->bval;
 
+    // bit extending
+    sign_bit = svGetBitselLogic(p, 15);    // save the sign bit    
+    for(int i = 0; i < 16; i++)
+        svPutBitselLogic(p, 16 + i, sign_bit);
+    // do 32 bits adder
+    mac_out->aval = reg_data->aval + p->aval; 
+    mac_out->bval = reg_data->bval + p->bval; 
+}
 
 
 
