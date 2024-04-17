@@ -6,6 +6,7 @@ typedef logic [63:0] ultra_ram_queue [$:4];
 
 module test_golden_model;
     localparam pKERNEL_SIZE  = 9;
+    localparam pBIAS_NUM     = 16;
     localparam pBASE_ADDRESS = 'h40000000; 
     logic [71:0]  data_in;
     logic [255:0] real_data_out;
@@ -14,19 +15,28 @@ module test_golden_model;
     ultra_ram_queue virtual_mem [int];
     logic [7:0]   arr_gm_data_in [pKERNEL_SIZE];
     logic [255:0] arr_gm_weight_data [pKERNEL_SIZE];
+    logic [31:0]  arr_gm_adder_tree [32];
+    logic [7:0]   arr_out_feature_map[32];
+    logic [31:0]  gm_scale;
     // DPI Import
     import "DPI-C" function void test_thang();
-    import "DPI-C" function void golden_model( output logic [31:0] result,
+    import "DPI-C" function void c_golden_model( output logic [31:0] result,
                                                input logic [31:0] pixel); 
+    import "DPI-C" function void c_mac( input  logic [7:0]  pixel_data,
+                                        input  logic [7:0]  weight_data,
+                                        input  logic [31:0] reg_data,
+                                        output logic [31:0] mac_out);
     
     initial begin
         init_data_and_mem();
-        sv_arr_data_and_weight_ready();
+        sv_arr_Data_Weight_AdderReg_Scale_ready();
         sv_golden_model();
         $finish;
     end
+       
+    //---------------------------------------------------------------------------------------------------------------------------
     
-    function sv_arr_data_and_weight_ready();
+    function sv_arr_Data_Weight_AdderReg_Scale_ready();
         int pixel_pos;
         logic [63:0] arr_TMP_weight_data [4];      
         // seperate pixel of image
@@ -52,7 +62,50 @@ module test_golden_model;
             arr_gm_weight_data[pixel_pos][127:64]  = arr_TMP_weight_data[1];
             arr_gm_weight_data[pixel_pos][63:0]    = arr_TMP_weight_data[0]; 
         end 
+        
+        // initialize value for adder tree
+        foreach(arr_gm_adder_tree[i]) begin
+            arr_gm_adder_tree[i] = 32'd0;
+        end
+        
+        // get scale data - scale of virtual_mem[scale][63:32] (dequant_scale_r[31:0])
+        gm_scale = virtual_mem[pBASE_ADDRESS + pKERNEL_SIZE + pBIAS_NUM][0][63:32];
+        /*
+        
+        CONTINUE FROM BUILDING DEQUANT MODEL OF C
+        + SEND SCALE AND ADDER_TREE_REG TO C
+        
+        */
     endfunction
+    
+    //---------------------------------------------------------------------------------------------------------------------------
+    
+    function sv_golden_model();
+        int left, right;
+        logic [7:0] pixel_data;
+        logic [7:0] weight_data;
+        logic [31:0] mac_out;
+        
+        for(int i = 0; i < pKERNEL_SIZE; i++) begin
+            for(int j = 0; j < 32; j++) begin
+                right = j * 8;
+                left = right + 8 - 1;
+                pixel_data  = arr_gm_data_in[i];
+                weight_data = arr_gm_weight_data[i][left-:8];
+                // Call C function
+                c_mac(pixel_data, weight_data, arr_gm_adder_tree[j], mac_out);
+                arr_gm_adder_tree[j] = mac_out;
+            end
+        end
+                
+
+        // DEBUG /////////////////////////////////////        
+        foreach(arr_gm_adder_tree[i]) begin
+            $display("%h", arr_gm_adder_tree[i]);
+        end
+    endfunction
+    
+    //---------------------------------------------------------------------------------------------------------------------------
     
     function init_data_and_mem();           // might delete later
         int pos = 0;
@@ -69,13 +122,6 @@ module test_golden_model;
         for(int i = 0; i < 17; i++) begin
             virtual_mem[pBASE_ADDRESS + 9 + i].push_back(arr_weight_linear[pos]);
                 pos++;
-        end
-        foreach(virtual_mem[i]) begin
-            $write("address: %0h ,", i);
-            foreach(virtual_mem[i][j]) begin
-                $write("  { pos : %0d  data = %8h_%8h }  ", j, virtual_mem[i][j][63:32], virtual_mem[i][j][31:0]);
-            end
-            $write("\n");    
         end
     endfunction
 endmodule
