@@ -1,0 +1,16 @@
+NOTE: Cách chia class thành các file khác nhau trong vivado
+viết từng class ở các file .sv khác nhau
+sử dụng `include THEO THỨ TỰ trước sau (ví dụ class env chứa generator, driver, monitor, và scoreboard) thì
+file sv của 4 class trên không cần `include "transaction_item.sv" dù chúng cần gọi class transaction_item
+ta include 4 class trên vào file sv của class env. và `include "transaction_item.sv" nằm ở dòng đầu tiền:
+Ví dụ:
+`include "switch_transition_obj.sv"
+`include "switch_driver.sv"
+`include "switch_generator.sv"
+`include "switch_monitor.sv"
+`include "switch_scoreboard.sv"
+
+=> nếu không include đúng thứ tự, chạy mô phỏng sẽ bị báo lỗi
+
+
+CACH 2. SAU KHI TAO FILE CHO TUNG CLASS, CHON MUC PROPERTIES CUA FILE, TICK VAO GLOBAL INCLUDE, CLASS SE CO THE TRUY XUAT O BAT CU FILE NAO TRONG SIM SET

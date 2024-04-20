@@ -1,0 +1,4 @@
+`uvm_info("DRV", tr.sprint(), UVM_NONE)      
+
+- uvm_object.sprint() return a string instead void as print() return
+- can use sprint() inside a `uvm_info macro  to print the result into file
