@@ -4,24 +4,45 @@
 #include <math.h>
 
 
-void do_sigmoid(svLogicVecVal *copyIn);
-void c_mac ( const svLogicVecVal *pixel_data, 
-	     const svLogicVecVal *weight_data, 
-	     const svLogicVecVal *reg_data,
-	     svLogicVecVal *mac_out );
 
-void golden_model( svLogicVecVal *sigmoid_rslt, const svLogicVecVal *in) {
-    svLogicVecVal *copyIn;
-    copyIn->aval = in->aval;
-    copyIn->bval = in->bval;
-    // do sigmoid function
-    do_sigmoid(copyIn);
-    // copy value to send to SV
-    sigmoid_rslt->aval = copyIn->aval;
-    sigmoid_rslt->bval = copyIn->bval;
+void c_mac(const svLogicVecVal *pixel_data, 
+	   const svLogicVecVal *weight_data, 
+	   const svLogicVecVal *reg_data,
+	   svLogicVecVal *mac_out )
+{
+    svLogicVecVal *p;
+    svLogic sign_bit;
+    // do 8 bits mul, result is 16 bit
+    p->aval = pixel_data->aval * weight_data->aval;
+    p->bval = pixel_data->bval * weight_data->bval;
+
+    // bit extending
+    sign_bit = svGetBitselLogic(p, 15);    // save the sign bit    
+    for(int i = 0; i < 16; i++)
+        svPutBitselLogic(p, 16 + i, sign_bit);
+    // do 32 bits adder
+    mac_out->aval = reg_data->aval + p->aval; 
+    mac_out->bval = reg_data->bval + p->bval; 
 }
 
-void do_sigmoid(svLogicVecVal *copyIn){
+void c_dequantize(const svLogicVecVal *deq_in, const svLogicVecVal *scale, svLogicVecVal *deq_out){
+    svLogicVecVal *p;
+    p->aval = deq_in->aval * scale->aval;
+    p->bval = deq_in->bval * scale->bval;
+    printf("[DEC] %0d\n", *p);
+    printf("[HEX] %0x\n", *p);
+    printf("[BIN] %0b\n", *p);
+}
+
+void c_bias(const svLogicVecVal *bias_in, const svLogicVecVal *bias_weight, svLogicVecVal *bias_out){
+    bias_out->aval = bias_in->aval + bias_weight->aval;	
+    bias_out->bval = bias_in->bval + bias_weight->bval;	
+}
+
+void c_sigmoid(svLogicVecVal *actv_in, svLogicVecVal *actv_out){
+    // Copy input
+    actv_out->aval = actv_in->aval;
+    actv_out->bval = actv_in->bval;    
     //  constant fixed point numbers using in sigmoid
     const svLogicVecVal fp_5_0     = { .aval = 0b00000000000001010000000000000000,
                                        .bval = 0 };
@@ -40,19 +61,19 @@ void do_sigmoid(svLogicVecVal *copyIn){
     svLogic sign_bit;
     svLogicVecVal plan_operand;
 
-    copyIn->aval = abs(copyIn->aval);           // |x|
-    sign_bit = svGetBitselLogic(copyIn, 31);    // save the sign bit 
-    if( copyIn->aval >= fp_5_0.aval ) {
-        copyIn->aval = fp_1_0.aval;
-        copyIn->bval = fp_1_0.bval;
+    actv_out->aval = abs(actv_out->aval);                // |x|
+    sign_bit = svGetBitselLogic(actv_out, 31);           // save the sign bit 
+    if( actv_out->aval >= fp_5_0.aval ) {
+        actv_out->aval = fp_1_0.aval;
+        actv_out->bval = fp_1_0.bval;
 	return;
     } 
-    else if( copyIn->aval >= fp_2_375.aval ) {
+    else if( actv_out->aval >= fp_2_375.aval ) {
         shift_amount = 5;
         plan_operand.aval = fp_0_84375.aval;	
         plan_operand.bval = fp_0_84375.bval;	
     } 
-    else if( copyIn->aval >= fp_1_0.aval ) {
+    else if( actv_out->aval >= fp_1_0.aval ) {
         shift_amount = 3;
         plan_operand.aval = fp_0_625.aval;	
         plan_operand.bval = fp_0_625.bval;	
@@ -64,33 +85,29 @@ void do_sigmoid(svLogicVecVal *copyIn){
     }
     
     // Do shift
-    copyIn->aval >>= shift_amount;
-    copyIn->bval >>= shift_amount;
+    actv_out->aval >>= shift_amount;
+    actv_out->bval >>= shift_amount;
     for(int i = 0; i < shift_amount; i++) 
-        svPutBitselLogic(copyIn, 32-shift_amount+i, sign_bit);		// add sign bits after shift as shift right remove right bits
+        svPutBitselLogic(actv_out, 32-shift_amount+i, sign_bit);		// add sign bits after shift as shift right remove right bits
     // Add PLAN operand									
-    copyIn->aval += plan_operand.aval;
+    actv_out->aval += plan_operand.aval;
 }
 
-void c_mac ( const svLogicVecVal *pixel_data, 
-	     const svLogicVecVal *weight_data, 
-	     const svLogicVecVal *reg_data,
-	     svLogicVecVal *mac_out )
-{
-    svLogicVecVal *p;
-    svLogic sign_bit;
-    // do 8 bits mul, result is 16 bit
-    p->aval = pixel_data->aval * weight_data->aval;
-    p->bval = pixel_data->bval * weight_data->bval;
+void c_quantize(svLogicVecVal *quant_in, svLogicVecVal *quant_out){
+   svLogic bit_16th;
+   bit_16th = svGetBitselLogic(quant_in, 16);
 
-    // bit extending
-    sign_bit = svGetBitselLogic(p, 15);    // save the sign bit    
-    for(int i = 0; i < 16; i++)
-        svPutBitselLogic(p, 16 + i, sign_bit);
-    // do 32 bits adder
-    mac_out->aval = reg_data->aval + p->aval; 
-    mac_out->bval = reg_data->bval + p->bval; 
+   if(bit_16th) 
+       quant_out->aval = 0xFFFFFFFF;
+   else
+       svGetPartselLogic(quant_out, quant_in, 8, 8);
+
+   quant_out->bval = 0xFFFFFF00;
 }
+
+
+
+
 
 
 
