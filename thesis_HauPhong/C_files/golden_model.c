@@ -5,39 +5,28 @@
 
 
 
-void c_mac(const svLogicVecVal *pixel_data, 
-	   const svLogicVecVal *weight_data, 
-	   const svLogicVecVal *reg_data,
+void c_mac(const int pixel_data, 
+	   const int weight_data, 
+	   const int reg_data,
 	   svLogicVecVal *mac_out )
 {
-    svLogicVecVal *p;
-    svLogic sign_bit;
-    // do 8 bits mul, result is 16 bit
-    p->aval = pixel_data->aval * weight_data->aval;
-    p->bval = pixel_data->bval * weight_data->bval;
-
-    // bit extending
-    sign_bit = svGetBitselLogic(p, 15);    // save the sign bit    
-    for(int i = 0; i < 16; i++)
-        svPutBitselLogic(p, 16 + i, sign_bit);
-    // do 32 bits adder
-    mac_out->aval = reg_data->aval + p->aval; 
-    mac_out->bval = reg_data->bval + p->bval; 
+    mac_out->aval = pixel_data * weight_data + reg_data;
+    mac_out->bval = 0;
 }
 
-void c_dequantize(const svLogicVecVal *deq_in, const svLogicVecVal *scale, svLogicVecVal *deq_out){
-    svLogicVecVal *p;
-    p->aval = deq_in->aval * scale->aval;
-    p->bval = deq_in->bval * scale->bval;
-    printf("[DEC] %0d\n", *p);
-    printf("[HEX] %0x\n", *p);
-    printf("[BIN] %0b\n", *p);
-}
-
-void c_bias(const svLogicVecVal *bias_in, const svLogicVecVal *bias_weight, svLogicVecVal *bias_out){
+/*void c_bias(const svLogicVecVal *bias_in, const svLogicVecVal *bias_weight, svLogicVecVal *bias_out){
     bias_out->aval = bias_in->aval + bias_weight->aval;	
     bias_out->bval = bias_in->bval + bias_weight->bval;	
+}*/
+
+void c_bias(const int bias_in, 
+	    const int bias_weight, 
+	    svLogicVecVal *bias_out)
+{
+    bias_out->aval = bias_in + bias_weight;
+    bias_out->bval = 0;
 }
+
 
 void c_sigmoid(svLogicVecVal *actv_in, svLogicVecVal *actv_out){
     // Copy input
@@ -93,6 +82,7 @@ void c_sigmoid(svLogicVecVal *actv_in, svLogicVecVal *actv_out){
     actv_out->aval += plan_operand.aval;
 }
 
+
 void c_quantize(svLogicVecVal *quant_in, svLogicVecVal *quant_out){
    svLogic bit_16th;
    bit_16th = svGetBitselLogic(quant_in, 16);
@@ -118,37 +108,12 @@ void c_quantize(svLogicVecVal *quant_in, svLogicVecVal *quant_out){
 // Function for testing things //////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-void test_thang(){
-    svLogicVecVal o1;
-    svLogicVecVal o2;
-
-    svLogicVecVal fp_2_375;     
-    svLogicVecVal fp_0_84375; 
-    svLogicVecVal fp_0_625;     
-    svLogicVecVal fp_0_5;   
-    
-    fp_2_375.aval   =  0b00000000000000100110000000000000;
-    fp_0_84375.aval =  0b00000000000000001101100000000000;
-    fp_0_625.aval   =  0b00000000000000001010000000000000;
-    fp_0_5.aval     =  0b00000000000000001000000000000000;    
-    
-    o1.aval = -25;
-    o2.aval = -50;    
-    o1.bval = 0;
-    o2.bval = 0;
-
-    printf("%0d + %0d = %0d\n", o1.aval, o2.aval, o1.aval + o2.aval);
-    printf("%0d - %0d = %0d\n", o1.aval, o2.aval, o1.aval - o2.aval);
-    printf("%0d * %0d = %0d\n", o1.aval, o2.aval, o1.aval * o2.aval);
-
-    if(o1.aval > o2.aval)
-        printf("o1:%0d is larger than o2:%0d\n", o1.aval, o2.aval);
-    else if(o1.aval < o2.aval)
-        printf("o1:%0d is less than o2:%0d\n", o1.aval, o2.aval);
-    else
-        printf("o1:%0d and o2:%0d is equal\n", o1.aval, o2.aval);
-
-    printf("abs(o1) = %0d\n", abs(o1.aval));
-    printf("before abs(o1) : %0b\n", o1.aval);
-    printf("after abs(o1)  : %0b\n", abs(o1.aval));
+void test_thang(const signed int ia, const signed int ib, svLogicVecVal *s, svLogicVecVal *p){
+    s->aval = ia + ib;
+    s->bval = 0;
+    p->aval = ia * ib;
+    p->bval = 0;
+    printf("[C] %0d +/* %0d = \n", ia, ib);
 }
+    
+
