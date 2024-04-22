@@ -19,14 +19,6 @@ module test_golden_model;
     logic signed [63:0]  arr_gm_bias_weight [pBIAS_NUM];
     logic signed [31:0]  gm_scale;
     
-    logic        [7:0]  DEBUG_DATA_IN;        // DEBUG          
-    logic signed [7:0]  DEBUG_WEIGHT;         // DEBUG
-    logic signed [31:0] DEBUG_REG;            // DEBUG
-    logic signed [31:0] DEBUG_MAC_OUT;        // DEBUG
-    int                 i_DATA_IN;            // DEBUG
-    int                 i_WEIGHT;             // DEBUG
-    int                 i_REG;                // DEBUG
-
     // DPI Import                                          
     import "DPI-C" function void c_mac ( input  int                  pixel_data, 
                                          input  int                  weight_data, 
@@ -37,10 +29,10 @@ module test_golden_model;
                                           input  int                 bias_weight,
                                           output logic signed [31:0] bias_out );
                                          
-    import "DPI-C" function void c_sigmoid ( input  logic signed [31:0] actv_in,
+    import "DPI-C" function void c_sigmoid ( input  int                 actv_in,
                                              output logic signed [31:0] actv_out);
                                             
-    import "DPI-C" function void c_quantize ( input  logic signed [31:0] quant_in,
+    import "DPI-C" function void c_quantize ( input  int                 quant_in,
                                               output logic signed [31:0] quant_out);
                                                                               
     initial begin
@@ -49,21 +41,7 @@ module test_golden_model;
         sv_golden_model();
         $finish;
     end
-    
-    /*initial begin
-        DEBUG_DATA_IN = 8'd51;
-        DEBUG_WEIGHT  = -8'd42;
-        DEBUG_REG     = -31'd20;
-        i_DATA_IN = DEBUG_DATA_IN;
-        i_WEIGHT  = DEBUG_WEIGHT;
-        i_REG     = DEBUG_REG;
-        c_mac(i_DATA_IN, i_WEIGHT, i_REG, DEBUG_MAC_OUT);
-        $display("[SV] DEBUG_MAC_OUT = %0d", DEBUG_MAC_OUT);
-        $finish;
-    end*/
        
-    
-    
     //---------------------------------------------------------------------------------------------------------------------------
     
     function sv_golden_model();
@@ -72,6 +50,8 @@ module test_golden_model;
         int weight_data;
         int mac_reg;
         int bias_in;
+        int actv_in;
+        int quant_in;
         logic signed [31:0] mac_out;
         logic signed [31:0] deq_out;
         logic signed [31:0] bias_out;
@@ -90,26 +70,16 @@ module test_golden_model;
                 // Call C function
                 c_mac(pixel_data, weight_data, mac_reg, mac_out);
                 arr_gm_filter_reg[j] = mac_out;
-                
-                if(j == 0) begin                                                                // DEBUG
-                    $display("[pixel %2d filer %2d] data_in : %d", i, j, pixel_data);           // DEBUG
-                    $display("[pixel %2d filer %2d] weight  : %d", i, j, weight_data);          // DEBUG
-                    $display("[pixel %2d filer %2d] reg     : %d", i, j, mac_reg);              // DEBUG
-                    $display("[pixel %2d filer %2d] result  : %d", i, j, mac_out);              // DEBUG
-                    $display();                                                                 // DEBUG
-                end                                                                             // DEBUG
             end
-        end
-        
-        debug_filter_reg("MAC");                                                                // DEBUG
+        end        
+        debug_filter_reg("MAC");                                                                    // DEBUG
         
         // 2. DEQUANTIZE ..........................................................................................
         foreach(arr_gm_filter_reg[i]) begin
             sv_dequantize(arr_gm_filter_reg[i], gm_scale, deq_out);
             arr_gm_filter_reg[i] = deq_out;     // update reg
-        end
-        
-        debug_filter_reg("DEQUANTIZE");                                                         // DEBUG
+        end        
+        debug_filter_reg("DEQUANTIZE");                                                             // DEBUG
         
         // 3. BIAS ................................................................................................        
         for(int i = 0; i < 32; i++) begin
@@ -118,27 +88,21 @@ module test_golden_model;
                                    $signed(arr_gm_bias_weight[i/2][63:32]); 
             c_bias(bias_in, weight_data, bias_out);
             arr_gm_filter_reg[i] = bias_out;    // update reg
-            
-            $display("[BIAS filer %2d] data_in : %d", i, bias_in);                           // DEBUG
-            $display("[BIAS filer %2d] weight  : %d", i, weight_data);                       // DEBUG
-            $display("[BIAS filer %2d] result  : %d", i, bias_out);                          // DEBUG
-            $display();                                                                      // DEBUG
-        end
+        end        
+        debug_filter_reg("BIAS");                                                                   // DEBUG
         
-        debug_filter_reg("BIAS");                                   // DEBUG
-        
-        // 4. ACTIVATION (Sigmoid) ................................................................................
-        /*
+        // 4. ACTIVATION (Sigmoid) ................................................................................        
         foreach(arr_gm_filter_reg[i]) begin
-            c_sigmoid(arr_gm_filter_reg[i], actv_out);
+            actv_in = arr_gm_filter_reg[i];
+            c_sigmoid(actv_in, actv_out);
             arr_gm_filter_reg[i] = actv_out;    // update reg
-        end
-        
-        debug_filter_reg("ACTIVATION");                             // DEBUG
+        end        
+        debug_filter_reg("ACTIVATION");                                                             // DEBUG
         
         // QUANTIZATION
         foreach(arr_gm_filter_reg[i]) begin
-            c_quantize(arr_gm_filter_reg[i], quant_out);
+            quant_in = arr_gm_filter_reg[i];
+            c_quantize(quant_in, quant_out);
             arr_gm_filter_reg[i] = quant_out;
             $display("reg[%2d] after quantize : %b", i, arr_gm_filter_reg[i]);                     // DEBUG        
         end
@@ -148,7 +112,6 @@ module test_golden_model;
             expected_data_out[i*8+7-:8] = arr_gm_filter_reg[i][7:0];
             $display("%h", expected_data_out); 
         end
-        */
     endfunction
     
     //---------------------------------------------------------------------------------------------------------------------------
@@ -227,7 +190,7 @@ module test_golden_model;
             ext_product += arr_partial[i];
         end
 
-        deq_result = ext_product[47:16];        // dequantize result
+        deq_result = $signed(ext_product[47:16]);        // dequantize result
     endfunction
     
     //---------------------------------------------------------------------------------------------------------------------------
