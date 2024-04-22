@@ -4,7 +4,7 @@
 #include <math.h>
 
 
-
+// MAC ------------------------------------------------------------------------------------------------
 void c_mac(const int pixel_data, 
 	   const int weight_data, 
 	   const int reg_data,
@@ -14,10 +14,6 @@ void c_mac(const int pixel_data,
     mac_out->bval = 0;
 }
 
-/*void c_bias(const svLogicVecVal *bias_in, const svLogicVecVal *bias_weight, svLogicVecVal *bias_out){
-    bias_out->aval = bias_in->aval + bias_weight->aval;	
-    bias_out->bval = bias_in->bval + bias_weight->bval;	
-}*/
 
 void c_bias(const int bias_in, 
 	    const int bias_weight, 
@@ -26,13 +22,15 @@ void c_bias(const int bias_in,
     bias_out->aval = bias_in + bias_weight;
     bias_out->bval = 0;
 }
+//----------------------------------------------------------------------------------------------------
 
 
-void c_sigmoid(svLogicVecVal *actv_in, svLogicVecVal *actv_out){
+// ACTIVATION (SIGMOID) ------------------------------------------------------------------------------
+void c_sigmoid(const int actv_in, svLogicVecVal *actv_out){
     // Copy input
-    actv_out->aval = actv_in->aval;
-    actv_out->bval = actv_in->bval;    
-    //  constant fixed point numbers using in sigmoid
+    actv_out->aval = actv_in;
+    actv_out->bval = 0;   
+    // Constant fixed point numbers using in sigmoid
     const svLogicVecVal fp_5_0     = { .aval = 0b00000000000001010000000000000000,
                                        .bval = 0 };
     const svLogicVecVal fp_1_0     = { .aval = 0b00000000000000010000000000000000,
@@ -53,8 +51,10 @@ void c_sigmoid(svLogicVecVal *actv_in, svLogicVecVal *actv_out){
     actv_out->aval = abs(actv_out->aval);                // |x|
     sign_bit = svGetBitselLogic(actv_out, 31);           // save the sign bit 
     if( actv_out->aval >= fp_5_0.aval ) {
-        actv_out->aval = fp_1_0.aval;
+	actv_out->aval = fp_1_0.aval;
         actv_out->bval = fp_1_0.bval;
+	if(actv_in < 0)
+	    actv_out->aval = fp_1_0.aval - actv_out->aval;	
 	return;
     } 
     else if( actv_out->aval >= fp_2_375.aval ) {
@@ -78,22 +78,39 @@ void c_sigmoid(svLogicVecVal *actv_in, svLogicVecVal *actv_out){
     actv_out->bval >>= shift_amount;
     for(int i = 0; i < shift_amount; i++) 
         svPutBitselLogic(actv_out, 32-shift_amount+i, sign_bit);		// add sign bits after shift as shift right remove right bits
+    
     // Add PLAN operand									
     actv_out->aval += plan_operand.aval;
+    actv_out->bval += plan_operand.bval;
+
+    // Y = 1 - Y if X < 0
+    if(actv_in < 0)
+        actv_out->aval = fp_1_0.aval - actv_out->aval;
 }
+// ---------------------------------------------------------------------------------------------
 
 
-void c_quantize(svLogicVecVal *quant_in, svLogicVecVal *quant_out){
+// QUANTIZE -------------------------------------------------------------------------------------
+void c_quantize(int quant_in, svLogicVecVal *quant_out){
+   svLogicVecVal *quant_in_ptr;
    svLogic bit_16th;
-   bit_16th = svGetBitselLogic(quant_in, 16);
 
+   // store signed value into svLogicVecVal pointer
+   quant_in_ptr->aval = quant_in;
+   quant_in_ptr->bval = 0;
+
+   // store sign bit of svLogicVecVal pointer
+   bit_16th = svGetBitselLogic(quant_in_ptr, 16);
+
+   // quantization
    if(bit_16th) 
        quant_out->aval = 0xFFFFFFFF;
    else
-       svGetPartselLogic(quant_out, quant_in, 8, 8);
+       svGetPartselLogic(quant_out, quant_in_ptr, 8, 8);
 
    quant_out->bval = 0xFFFFFF00;
 }
+// ---------------------------------------------------------------------------------------------
 
 
 
