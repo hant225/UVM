@@ -48,7 +48,7 @@ class driver extends uvm_driver#(transaction);
                 end 
                 else if(!tr.load_weight) begin
                     vif.en           <= tr.en;
-                    vif.buffer_in_en <= tr.buffer_in_en;
+                    vif.buffer_in_en <= tr.buffer_in_en;          
                     vif.data_in      <= tr.data_in;
                     tr.tr_display("DRV");
                     @(posedge vif.clk);             // wait one cycle for loading data_in to buffer_in

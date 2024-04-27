@@ -35,5 +35,13 @@ class test extends uvm_test;
             ss.start(e.a.seqr);
         phase.drop_objection(this);
     endtask
+    
+    // End of Elaboration Phase
+    function void end_of_elaboration_phase(uvm_phase phase);
+        uvm_phase main_phase;
+        super.end_of_elaboration_phase(phase);
+        main_phase = phase.find_by_name("main", 0);
+        main_phase.phase_done.set_drain_time(this, 500);
+    endfunction
 endclass
 

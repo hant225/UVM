@@ -38,7 +38,8 @@ class scoreboard extends uvm_monitor;
                                                input  logic signed [31:0] multiplier, 
                                                output logic signed [31:0] deq_result);
     extern virtual function void sv_golden_model();
-    
+    extern virtual function void debug_display(input string STEP);                                           // DELETE LATER
+    extern virtual function void eval_results();
     // Properties - Mem Mirror
     ultra_ram_queue virtual_mem [int];
 
@@ -47,9 +48,14 @@ class scoreboard extends uvm_monitor;
     string virtual_mem_path = "/home/hao/Documents/0.KHOA_LUAN_TOT_NGHIEP/log_dir/virtual_mem.txt";
     
     // Properties For Result Evaluation
-    transaction real_result_q [$];  
+    logic        [71:0]  q_real_data_in[$];
+    logic        [255:0] q_real_data_out[$]; 
+    logic        [255:0] q_expected_data_out[$];
+    
     logic        [71:0]  data_in;   
+    logic        [255:0] real_data_out;
     logic        [255:0] expected_data_out;
+    
     logic        [7:0]   arr_gm_data_in [pKERNEL_SIZE];
     logic signed [31:0]  arr_gm_filter_reg [32];
     logic signed [255:0] arr_gm_weight_data [pKERNEL_SIZE];
@@ -76,12 +82,10 @@ class scoreboard extends uvm_monitor;
     // Extract Phase
     virtual function void extract_phase(uvm_phase phase);
         super.extract_phase(phase);
-        `uvm_info("SCB", $sformatf("\nSIMULATION FINISHED! Number of collected results : %0d\n", this.real_result_q.size()), UVM_NONE)
-        foreach(this.real_result_q[i]) begin
-            `uvm_info("SCB_DEBUG", $sformatf("Result Queue size = %0d", real_result_q.size()), UVM_NONE)
-            `uvm_info("SCB", $sformatf("Result No.%0d", i), UVM_NONE)
-            `uvm_info("SCB", this.real_result_q[i].sprint(), UVM_NONE)
-        end
+        `uvm_info("SCB", $sformatf("\nSIMULATION FINISHED! Number of collected results : %0d\n", this.q_real_data_out.size()), UVM_NONE)
+        
+        $display("q_real_data_in size     : %0d", q_real_data_in.size());
+        $display("q_real_data_out size    : %0d", q_real_data_out.size());
     endfunction
     
     // Check Phase
@@ -89,6 +93,7 @@ class scoreboard extends uvm_monitor;
         super.check_phase(phase);
         `uvm_info("SCB", "[CHECK PHASE] START CHECKING PROCESS\n", UVM_NONE)
         predictor();
+        eval_results();
     endfunction
     
     // Write Method
@@ -120,12 +125,9 @@ class scoreboard extends uvm_monitor;
     endfunction
     
     // Collect DUT's Results Method
-    function void collect_dut_result(transaction tr);
-        transaction deep_cp_obj = new;
-        deep_cp_obj.data_in  = tr.data_in;
-        deep_cp_obj.data_out = tr.data_out;
-        tr.tr_display("SCB");
-        real_result_q.push_back(deep_cp_obj);
+    function void collect_dut_result(transaction tr);        
+        q_real_data_in.push_back(tr.data_in);
+        q_real_data_out.push_back(tr.data_out);
     endfunction
 endclass : scoreboard
 
@@ -167,12 +169,34 @@ endfunction : mirror_mem
 
 
 function scoreboard::predictor();
-    foreach(real_result_q[i]) begin
-        data_in = real_result_q[i].data_in;
+    foreach(q_real_data_in[i]) begin
+        data_in = q_real_data_in[i];
         sv_arr_get_data_ready();
         sv_golden_model();
     end
+   
+    $display("q_expected_data_out size : %0d", q_expected_data_out.size());
 endfunction : predictor
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+function scoreboard::eval_results();
+    string str_eval;
+    
+    repeat(3) begin
+        q_real_data_out.pop_front();
+        q_expected_data_out.pop_back();
+    end
+    
+    for(int i = 0; i < q_expected_data_out.size(); i++) begin
+        str_eval = (q_expected_data_out[i] == q_real_data_out[i])? "PASS" : "FAIL";
+        $display("[%3d] data_in = %h | Expected data out : %20h | Real data out : %20h --> %s", i, q_real_data_in[i], 
+                                                                                                   q_expected_data_out[i], 
+                                                                                                   q_real_data_out[i], str_eval);
+    end
+endfunction
 
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -207,11 +231,25 @@ function scoreboard::sv_golden_model();
         end
     end        
     
+    /////////////////////// DEBUG ONLY - DELETE LATER///////////////////////////////
+    /*foreach(virtual_mem[i]) begin
+        foreach(virtual_mem[i][j]) begin
+            $display("[%h][%0d] weight = %f", i, j, $itor($signed(virtual_mem[i][j][63:32]))*(2.0**(-16.0)));
+            $display("[%h][%0d] weight = %f", i, j, $itor($signed(virtual_mem[i][j][31:0]))*(2.0**(-16.0)));
+        end
+    end*/
+    debug_display("MAC");
+    /////////////////////// DEBUG ONLY - DELETE LATER///////////////////////////////
+    
     // 2. DEQUANTIZE ..........................................................................................
     foreach(arr_gm_filter_reg[i]) begin
         sv_dequantize(arr_gm_filter_reg[i], gm_scale, deq_out);
         arr_gm_filter_reg[i] = deq_out;     // update reg
     end        
+    
+    /////////////////////// DEBUG ONLY - DELETE LATER///////////////////////////////
+    debug_display("DEQUANTIZE");
+    /////////////////////// DEBUG ONLY - DELETE LATER///////////////////////////////
     
     // 3. BIAS ................................................................................................        
     for(int i = 0; i < 32; i++) begin
@@ -220,7 +258,11 @@ function scoreboard::sv_golden_model();
                                $signed(arr_gm_bias_weight[i/2][63:32]); 
         c_bias(bias_in, weight_data, bias_out);
         arr_gm_filter_reg[i] = bias_out;    // update reg
-    end        
+    end  
+          
+    /////////////////////// DEBUG ONLY - DELETE LATER///////////////////////////////
+    debug_display("BIAS");
+    /////////////////////// DEBUG ONLY - DELETE LATER///////////////////////////////
     
     // 4. ACTIVATION (Sigmoid) ................................................................................        
     foreach(arr_gm_filter_reg[i]) begin
@@ -228,6 +270,10 @@ function scoreboard::sv_golden_model();
         c_sigmoid(actv_in, actv_out);
         arr_gm_filter_reg[i] = actv_out;    // update reg
     end        
+    
+    /////////////////////// DEBUG ONLY - DELETE LATER///////////////////////////////
+    debug_display("ACTIVATION");
+    /////////////////////// DEBUG ONLY - DELETE LATER///////////////////////////////
     
     // 5. QUANTIZATION
     foreach(arr_gm_filter_reg[i]) begin
@@ -239,10 +285,23 @@ function scoreboard::sv_golden_model();
     // 6. FORM OUTPUT
     foreach(arr_gm_filter_reg[i]) begin
         expected_data_out[i*8+7-:8] = arr_gm_filter_reg[i][7:0];
-        $display("%h", expected_data_out); 
     end
+    q_expected_data_out.push_back(expected_data_out);
 endfunction : sv_golden_model
 
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+/////////////////////// DEBUG ONLY - DELETE LATER///////////////////////////////
+function void scoreboard::debug_display(input string STEP);
+    `uvm_info("SCB_PREDICTOR", $sformatf("data_in = %h", this.data_in), UVM_NONE)
+    `uvm_info("SCB_PREDICTOR", $sformatf("-------------%s RESULT-------------", STEP), UVM_NONE)
+    foreach(arr_gm_filter_reg[i]) begin
+        `uvm_info("SCB_PREDICTOR", $sformatf("REG %2d = %f", i, $itor(arr_gm_filter_reg[i])*(2.0**(-16.0))), UVM_NONE)
+    end
+    `uvm_info("SCB_PREDICTOR", "-----------------------------------------------------", UVM_NONE)
+endfunction
+/////////////////////// DEBUG ONLY - DELETE LATER///////////////////////////////
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 

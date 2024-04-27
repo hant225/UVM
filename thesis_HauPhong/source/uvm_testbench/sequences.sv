@@ -41,7 +41,12 @@ class std_seq extends uvm_sequence#(transaction);
     task do_load_weight(transaction tr);
         for(int i = 0; i < no_cycles; i++) begin
             start_item(tr);
-            ///////////////////////////////////////////////////////////////                
+            //___________________________________________________________________________________________________________________________________
+                if(i < pULTRA_RAM_NUM * pKERNEL_NUM)
+                    tr.weight_data_c.constraint_mode(0);            // turn off constraint     
+                else
+                    tr.weight_data_c.constraint_mode(1);            // turn on constraint
+                                                                                                                                                            
                 assert(tr.randomize());
                 tr.rst          = 1'b0;
                 tr.en           = 1'b0;
@@ -67,7 +72,7 @@ class std_seq extends uvm_sequence#(transaction);
                     this.weight_addr = this.weight_addr + 32'h1;
                     `uvm_info("STD_SEQ", "----------------------------------[SCALE LOADING]----------------------------------", UVM_NONE)
                 end
-            ///////////////////////////////////////////////////////////////
+            //___________________________________________________________________________________________________________________________________//
             finish_item(tr);   
         end
     endtask

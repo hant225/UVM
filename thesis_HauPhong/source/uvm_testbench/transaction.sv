@@ -25,7 +25,10 @@ class transaction extends uvm_sequence_item;
          logic         pe_ready;         
     
     // Constraint
-    /* insert constraints  */
+    constraint weight_data_c {weight_data[63:48] inside {[0:2]} || 
+                              weight_data[63:48] inside {[65534:65535]};    // [-2:-1]
+                              weight_data[31:16] inside {[0:2]} || 
+                              weight_data[31:16] inside {[65534:65535]};}   // [-2:-1]
     
     
     // Constructor
