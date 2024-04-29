@@ -3,8 +3,7 @@
 # set c_file_name <name of C file to compile>
 
 # compile and link library (2-steps)
-exec xsc -c ../C_files/$c_file_name
-exec xsc -shared -o ./xsim.dir/work/xsc/dpi.so
+exec xsc ../C_files/$c_file_name -gcc_compile_options "-I/usr/local/include/opencv4 -L/usr/local/lib -g -lopencv_core -lopencv_imgproc -lopencv_highgui -lstdc++ -lopencv_imgcodecs"
 
 # get current active simset
 set active_sim_set [current_fileset -simset]
