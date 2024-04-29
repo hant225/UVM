@@ -1,0 +1,3 @@
+https://fpganow.com/index.php/2024/01/03/error-while-running-vivado-simulation-on-ubuntu-22-04/
+
+IMPORTANT: replace the error dir in the log file to the dir of the tutorial (sai o dau sua o do)
