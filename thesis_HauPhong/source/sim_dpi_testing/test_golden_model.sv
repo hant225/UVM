@@ -9,7 +9,6 @@ module test_golden_model;
     localparam pBIAS_NUM     = 16;
     localparam pBASE_ADDRESS = 'h40000000; 
     logic [71:0]  data_in;
-    logic [255:0] real_data_out;
     logic [255:0] expected_data_out;
     
     ultra_ram_queue virtual_mem [int];
@@ -199,7 +198,7 @@ module test_golden_model;
         int pos = 0;
         logic [63:0] arr_weight_linear [53];
         
-        data_in = 72'h0000000000003384d6;       
+        data_in = 72'hfdd42966cbea0014d5;       
         $readmemh("/home/hao/Documents/0.KHOA_LUAN_TOT_NGHIEP/log_dir/mem_for_test_source.txt", arr_weight_linear);
         for(int i = 0; i < 9; i++) begin
             for(int j = 0; j < 4; j++) begin
