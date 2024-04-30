@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <svdpi.h>
 #include <math.h>
-
+//#include <yaml-cpp/yaml.h>
 
 // MAC ------------------------------------------------------------------------------------------------
 void c_mac(const int pixel_data, 
