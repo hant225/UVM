@@ -3,10 +3,11 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 module dpi_test_with_opencv;
-    import "DPI-C" function int main();
-    int tmp;
+
+    import "DPI-C" function void dumamay();
+   
     initial begin
-        tmp = main();
+        dumamay();
         #2000 $finish;
     end
 endmodule
