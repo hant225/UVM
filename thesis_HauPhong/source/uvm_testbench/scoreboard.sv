@@ -38,7 +38,7 @@ class scoreboard extends uvm_monitor;
                                                input  logic signed [31:0] multiplier, 
                                                output logic signed [31:0] deq_result);
     extern virtual function void sv_golden_model();
-    extern virtual function void debug_display(input string STEP);                                           // DELETE LATER
+    extern virtual function void debug_display(input string STEP);                                  // DELETE LATER
     extern virtual function void eval_results();
     // Properties - Mem Mirror
     ultra_ram_queue virtual_mem [int];
@@ -61,11 +61,7 @@ class scoreboard extends uvm_monitor;
     logic signed [255:0] arr_gm_weight_data [pKERNEL_SIZE];
     logic signed [63:0]  arr_gm_bias_weight [pBIAS_NUM];
     logic signed [31:0]  gm_scale;
-    
-    int                  count_pass;
-    int                  count_fail;
-    string               q_str_pass[$];
-    string               q_str_fail[$];
+
     // Register to Factory
     `uvm_component_utils(scoreboard)
     
@@ -206,10 +202,12 @@ function scoreboard::eval_results();
     for(int i = 0; i < q_expected_data_out.size(); i++) begin                
         if(q_expected_data_out[i] == q_real_data_out[i]) begin
             c_pass++;
-            `uvm_info("SCB_RPT", $sformatf("+------------------------------------- [%0d] PASS -------------------------------------+", i), UVM_NONE)
+            `uvm_info("SCB_RPT", $sformatf("[%0d]", i), UVM_NONE)
+            `uvm_info("SCB_RPT", "+---------------------------------------- PASS ----------------------------------------+", UVM_NONE)
         end else begin
             c_fail++;
-            `uvm_info("SCB_RPT", $sformatf("+------------------------------------- [%0d] FAIL -------------------------------------+", i), UVM_NONE)
+            `uvm_info("SCB_RPT", $sformatf("[%0d]", i), UVM_NONE)
+            `uvm_info("SCB_RPT", "+---------------------------------------- FAIL ----------------------------------------+", UVM_NONE)
             arr_fail_cases[i] = q_real_data_in[i];
         end                                                                    
 
@@ -223,7 +221,7 @@ function scoreboard::eval_results();
                                     
     `uvm_info("SCB_RPT", "################################ LIST OF FAIL CASES #################################", UVM_NONE)
     foreach(arr_fail_cases[i]) begin
-        `uvm_info("SCB_RPT", $sformatf("#    !! FAIL AT %6d - DATA IN = %h                               #", i, arr_fail_cases[i]), UVM_NONE)
+        `uvm_info("SCB_RPT", $sformatf("#    !!! FAIL AT [%6d] - DATA IN = %h                            #", i, arr_fail_cases[i]), UVM_NONE)
     end
     `uvm_info("SCB_RPT", "#####################################################################################", UVM_NONE)
     
@@ -245,7 +243,6 @@ endfunction
 
 
 function scoreboard::sv_golden_model();
-    int left, right;
     int pixel_data;
     int weight_data;
     int mac_reg;
@@ -260,11 +257,9 @@ function scoreboard::sv_golden_model();
     
     // 1. MAC ...................................................................................................
     for(int i = 0; i < pKERNEL_SIZE; i++) begin
-        for(int j = 0; j < 32; j++) begin
-            right = j * 8;
-            left = right + 8 - 1;
+        for(int j = 0; j < 32; j++) begin            
             pixel_data  = arr_gm_data_in[i];
-            weight_data = $signed(arr_gm_weight_data[i][left-:8]);      // dont forget to add the $signed() when extract the packed array 
+            weight_data = $signed(arr_gm_weight_data[i][j*8+7-:8]);      // dont forget to add the $signed() when extract the packed array 
             mac_reg     = $signed(arr_gm_filter_reg[j]);
             
             // Call C function
@@ -274,12 +269,6 @@ function scoreboard::sv_golden_model();
     end        
     
     /////////////////////// DEBUG ONLY - DELETE LATER///////////////////////////////
-    /*foreach(virtual_mem[i]) begin
-        foreach(virtual_mem[i][j]) begin
-            $display("[%h][%0d] weight = %f", i, j, $itor($signed(virtual_mem[i][j][63:32]))*(2.0**(-16.0)));
-            $display("[%h][%0d] weight = %f", i, j, $itor($signed(virtual_mem[i][j][31:0]))*(2.0**(-16.0)));
-        end
-    end*/
     debug_display("MAC");
     /////////////////////// DEBUG ONLY - DELETE LATER///////////////////////////////
     
