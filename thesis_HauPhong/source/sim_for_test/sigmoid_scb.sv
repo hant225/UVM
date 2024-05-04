@@ -41,7 +41,8 @@ module sigmoid_scb;
         #188 RST = 1'b0; EN = 1'b1;
         repeat(10) begin
             #20;
-            DATA_IN[31:16] = $urandom_range(0, 5);
+            // DATA_IN[31:16] = $urandom_range(0, 5);
+            DATA_IN[31:16] = $random();
             DATA_IN[15:0]  = $urandom();
             $display("DATA_IN = %f", $itor(DATA_IN)*(2.0**(-16.0)));
             #2000; 
