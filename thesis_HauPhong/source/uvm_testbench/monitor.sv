@@ -43,13 +43,13 @@ class monitor extends uvm_monitor;
                     tr.load_weight  = vif.load_weight;  
                     tr.en           = vif.en;
                     tr.buffer_in_en = vif.buffer_in_en;                                 
-                if(vif.load_weight) begin                                // weight load process
+                if(vif.load_weight) begin                                 // weight load process
                     tr.weight_addr  = vif.weight_addr;
                     tr.weight_data  = vif.weight_data;
                     `uvm_info("MON", $sformatf("[MEMORY LOADING] Weight Loaded: weight_addr = %0h , weight_data = %8h_%8h", tr.weight_addr, tr.weight_data[63:32], tr.weight_data[31:0]), UVM_NONE)
                 end 
                 else if(vif.op == RUNNING) begin                          // pe_conv_mac process
-                    @(posedge vif.valid)
+                    @(posedge vif.pe_ready)
                     tr.data_in      = vif.data_in;
                     tr.valid        = vif.valid;
                     tr.data_out     = vif.data_out;

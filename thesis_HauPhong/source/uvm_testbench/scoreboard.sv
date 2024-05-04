@@ -62,6 +62,10 @@ class scoreboard extends uvm_monitor;
     logic signed [63:0]  arr_gm_bias_weight [pBIAS_NUM];
     logic signed [31:0]  gm_scale;
     
+    int                  count_pass;
+    int                  count_fail;
+    string               q_str_pass[$];
+    string               q_str_fail[$];
     // Register to Factory
     `uvm_component_utils(scoreboard)
     
@@ -93,6 +97,12 @@ class scoreboard extends uvm_monitor;
         super.check_phase(phase);
         `uvm_info("SCB", "[CHECK PHASE] START CHECKING PROCESS\n", UVM_NONE)
         predictor();
+    endfunction
+    
+    // Check Phase
+    virtual function void report_phase(uvm_phase phase);
+        super.report_phase(phase);
+        `uvm_info("SCB", "[REPORT PHASE] START CHECKING PROCESS\n", UVM_NONE)
         eval_results();
     endfunction
     
@@ -183,19 +193,51 @@ endfunction : predictor
 
 
 function scoreboard::eval_results();
-    string str_eval;
-    
+    int c_pass = 0;
+    int c_fail = 0;
+    logic [71:0] arr_fail_cases [int];
+        
     repeat(3) begin
-        q_real_data_out.pop_front();
-        q_expected_data_out.pop_back();
+        q_real_data_out.pop_front();                // first 3 elements of q_real_data_out are invalid
+        q_real_data_in.pop_back();                  // last 3 elements of q_real_data_in and q_expected_data_out are invalid         
+        q_expected_data_out.pop_back();             // last 3 elements of q_real_data_in and q_expected_data_out are invalid
     end
     
-    for(int i = 0; i < q_expected_data_out.size(); i++) begin
-        str_eval = (q_expected_data_out[i] == q_real_data_out[i])? "PASS" : "FAIL";
-        $display("[%3d] data_in = %h | Expected data out : %20h | Real data out : %20h --> %s", i, q_real_data_in[i], 
-                                                                                                   q_expected_data_out[i], 
-                                                                                                   q_real_data_out[i], str_eval);
+    for(int i = 0; i < q_expected_data_out.size(); i++) begin                
+        if(q_expected_data_out[i] == q_real_data_out[i]) begin
+            c_pass++;
+            `uvm_info("SCB_RPT", $sformatf("+------------------------------------- [%0d] PASS -------------------------------------+", i), UVM_NONE)
+        end else begin
+            c_fail++;
+            `uvm_info("SCB_RPT", $sformatf("+------------------------------------- [%0d] FAIL -------------------------------------+", i), UVM_NONE)
+            arr_fail_cases[i] = q_real_data_in[i];
+        end                                                                    
+
+        `uvm_info("SCB_RPT", $sformatf("| DATA IN           = %h                                               |", q_real_data_in[i]), UVM_NONE)
+        `uvm_info("SCB_RPT", $sformatf("| EXPECTED DATA OUT = %h |", q_expected_data_out[i]), UVM_NONE)
+        `uvm_info("SCB_RPT", $sformatf("| REAL DATA OUT     = %h | ", q_real_data_out[i]), UVM_NONE)                                                                    
+        `uvm_info("SCB_RPT", "+--------------------------------------------------------------------------------------+", UVM_NONE)
+        `uvm_info("SCB_RPT", "                                                                                    ", UVM_NONE)
+    end    
+    
+                                    
+    `uvm_info("SCB_RPT", "################################ LIST OF FAIL CASES #################################", UVM_NONE)
+    foreach(arr_fail_cases[i]) begin
+        `uvm_info("SCB_RPT", $sformatf("#    !! FAIL AT %6d - DATA IN = %h                               #", i, arr_fail_cases[i]), UVM_NONE)
     end
+    `uvm_info("SCB_RPT", "#####################################################################################", UVM_NONE)
+    
+    
+    `uvm_info("SCB_RPT", "                                                                                    ", UVM_NONE)
+    
+    `uvm_info("SCB_RPT", "************************************************************************************", UVM_NONE)    
+    `uvm_info("SCB_RPT", $sformatf("q_real_data_in size      : %0d", q_real_data_in.size()), UVM_NONE);
+    `uvm_info("SCB_RPT", $sformatf("q_real_data_out size     : %0d", q_real_data_out.size()), UVM_NONE);                
+    `uvm_info("SCB_RPT", $sformatf("q_expected_data_out size : %0d", q_expected_data_out.size()), UVM_NONE);
+    `uvm_info("SCB_RPT", $sformatf("Pass cases : %3d / 784 (%f %%)", c_pass, $itor(c_pass) / 784.0 * 100.0), UVM_NONE);
+    `uvm_info("SCB_RPT", $sformatf("Fail cases : %3d / 784 (%f %%)", c_fail, $itor(c_fail) / 784.0 * 100.0), UVM_NONE);
+    `uvm_info("SCB_RPT", "************************************************************************************", UVM_NONE)
+    `uvm_info("SCB_RPT", "                                                                                    ", UVM_NONE)
 endfunction
 
 
@@ -297,7 +339,9 @@ function void scoreboard::debug_display(input string STEP);
     `uvm_info("SCB_PREDICTOR", $sformatf("data_in = %h", this.data_in), UVM_NONE)
     `uvm_info("SCB_PREDICTOR", $sformatf("-------------%s RESULT-------------", STEP), UVM_NONE)
     foreach(arr_gm_filter_reg[i]) begin
-        `uvm_info("SCB_PREDICTOR", $sformatf("REG %2d = %f", i, $itor(arr_gm_filter_reg[i])*(2.0**(-16.0))), UVM_NONE)
+        `uvm_info("SCB_PREDICTOR", $sformatf("REG %2d = %b || %h || %f", i, arr_gm_filter_reg[i]
+                                                                          , arr_gm_filter_reg[i]
+                                                                          , $itor(arr_gm_filter_reg[i])*(2.0**(-16.0))), UVM_NONE)
     end
     `uvm_info("SCB_PREDICTOR", "-----------------------------------------------------", UVM_NONE)
 endfunction
