@@ -1,0 +1,3 @@
+initial assert property (@(posedge clk) s_eventually start) $display("SVA Success at %0t", $time);
+-> result: The System Verilog Assertion  will be ignored as it appears inside another process. This assertion is not yet supported.
+=> dont use assertion inside initial block
