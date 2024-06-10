@@ -269,7 +269,7 @@ function scoreboard::sv_golden_model();
     end        
     
     /////////////////////// DEBUG ONLY - DELETE LATER///////////////////////////////
-    debug_display("MAC");
+    // debug_display("MAC");
     /////////////////////// DEBUG ONLY - DELETE LATER///////////////////////////////
     
     // 2. DEQUANTIZE ..........................................................................................
@@ -279,7 +279,7 @@ function scoreboard::sv_golden_model();
     end        
     
     /////////////////////// DEBUG ONLY - DELETE LATER///////////////////////////////
-    debug_display("DEQUANTIZE");
+    // debug_display("DEQUANTIZE");
     /////////////////////// DEBUG ONLY - DELETE LATER///////////////////////////////
     
     // 3. BIAS ................................................................................................        
@@ -292,7 +292,7 @@ function scoreboard::sv_golden_model();
     end  
           
     /////////////////////// DEBUG ONLY - DELETE LATER///////////////////////////////
-    debug_display("BIAS");
+    // debug_display("BIAS");
     /////////////////////// DEBUG ONLY - DELETE LATER///////////////////////////////
     
     // 4. ACTIVATION (Sigmoid) ................................................................................        
@@ -303,7 +303,7 @@ function scoreboard::sv_golden_model();
     end        
     
     /////////////////////// DEBUG ONLY - DELETE LATER///////////////////////////////
-    debug_display("ACTIVATION");
+    // debug_display("ACTIVATION");
     /////////////////////// DEBUG ONLY - DELETE LATER///////////////////////////////
     
     // 5. QUANTIZATION

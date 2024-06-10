@@ -36,6 +36,7 @@ module tb_top_pe_conv_mac;
     
     // INSTANCES
     pe_conv_mac_conv1_if vif();                         // interface inst    
+    
     pe_conv_mac_conv1 #(                                // DUT
          .pDATA_WIDTH         ( pDATA_WIDTH         )
         ,.pIN_CHANNEL         ( pIN_CHANNEL         )
@@ -59,7 +60,8 @@ module tb_top_pe_conv_mac;
         ,.valid         ( vif.valid        )
         ,.done          ( vif.done         )    
     ); 
-        
+    
+    bind pe_conv_mac_controller_conv1:pe_conv_mac_conv1.u_pe_controller SVA_pe_conv_mac_controller_conv1 dummy_ctrler (.*);     
     
     initial begin
         uvm_config_db #(virtual pe_conv_mac_conv1_if)::set(null, "*", "vif", vif);       
