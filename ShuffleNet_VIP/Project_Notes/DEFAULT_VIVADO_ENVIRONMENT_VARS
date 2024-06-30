@@ -1,0 +1,15 @@
+Defauilt Vivado Environment Variables:
+
+>>> puts $::env(PYTHONHOME)
+/tools/Xilinx/Vivado/2022.2/tps/lnx64/python-3.8.3
+>>> puts $::env(PYTHONPATH)
+/tools/Xilinx/Vivado/2022.2/tps/lnx64/python-3.8.3:/tools/Xilinx/Vivado/2022.2/tps/lnx64/python-3.8.3/bin:/tools/Xilinx/Vivado/2022.2/tps/lnx64/python-3.8.3/lib:/tools/Xilinx/Vivado/2022.2/tps/lnx64/python-3.8.3/lib/python3.8/site-packages:
+
+Today (29.06.2024) I do:
+unset -nocomplain ::env(PYTHONHOME)
+unset -nocomplain ::env(PYTHONPATH)
+--> Remember to redo this action if anything wrong in Vivado
+This is from (https://support.xilinx.com/s/question/0D54U000067pqBPSAY/how-to-run-the-system-python-from-tcl-script-in-vivado-20222?language=en_US)
+
+
+

@@ -1,0 +1,7 @@
++ Problem: Vivado running for too long time and crash
++ Cause: After checking I found out that because the testbench run for too long and it write the result into a single file, the file become bigger and bigger lead to the program harder to write end of the file then at some time the program actually crash
++ Solution: I did try to reduce the amount of line write to file and it fix the problem. But when it need to write huge information to file, I think I'll need to write to multiple file -> when it reach to a limited lines we need to change to the next file to write, using the these in UVM Run Phase:
+        uvm_top.set_report_default_file_hier(log_file);
+        uvm_top.set_report_severity_action_hier (UVM_INFO, UVM_DISPLAY | UVM_LOG);
+
+             

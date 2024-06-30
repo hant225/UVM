@@ -1,0 +1,2 @@
+run libtorch in C++: https://pytorch.org/tutorials/advanced/cpp_export.html
+install libtorch: https://ubuntu.pkgs.org/22.04/ubuntu-universe-arm64/libtorch-dev_1.8.1-4_arm64.deb.html
