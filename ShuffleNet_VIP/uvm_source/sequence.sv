@@ -5,6 +5,10 @@ import my_pkg::*;
 
 //////////////////////////////////////////////////////////////////////////////////
 
+import "DPI-C" function void gen_conv1_input_and_rslt();
+
+//////////////////////////////////////////////////////////////////////////////////
+
 class std_seq extends uvm_sequence#(transaction);   
     // Register to Factory
     `uvm_object_utils(std_seq)        
@@ -17,8 +21,10 @@ class std_seq extends uvm_sequence#(transaction);
     int fd      = 0;
     int trans_amount = pINPUT_WIDTH * pINPUT_HEIGHT;    
     
-    logic [pWEIGHT_DATA_WIDTH-1:0] weights [0:pWEIGHTS_NUM-1];        
+    logic [pDATA_WIDTH*pIN_CHANNEL-1:0] in_fm   [0:pINPUT_WIDTH*pINPUT_HEIGHT-1];
+    logic [pWEIGHT_DATA_WIDTH-1:0]      weights [0:pWEIGHTS_NUM-1];        
     string weight_path = "/home/hao/Documents/0.KHOA_LUAN_TOT_NGHIEP/shuffle_net/HauPhong_Weight/total_weights.txt"; 
+    string image_path  = "/home/hao/Documents/0.KHOA_LUAN_TOT_NGHIEP/shuffle_net/cnn_my_verification/InputData/pixel_image.txt";
     
     // Constructor
     function new(input string path = "std_seq");
@@ -36,12 +42,7 @@ class std_seq extends uvm_sequence#(transaction);
     endtask
     
     // Weight Load Method
-    task do_load_weight(transaction tr);                
-            // Turn off constraints
-            tr.cred.constraint_mode(0);
-            tr.cblue.constraint_mode(0);
-            tr.cgreen.constraint_mode(0);                        
-                  
+    task do_load_weight(transaction tr);                  
             // Common Signals for loading weights
             tr.rst         = 1'b0;
             tr.en          = 1'b0;
@@ -55,8 +56,7 @@ class std_seq extends uvm_sequence#(transaction);
                                     
             // 1. Kerrnel weights -----------------------------------------------------------------------------------------------------                     
             for(int i = 0; i < pKERNEL_NUM; i = i + 1) begin
-                start_item(tr);
-                    assert(tr.randomize());
+                start_item(tr);                    
                     tr.op          = MEM_KERNEL_LOAD;                      
                     tr.weight_addr = i - ram_idx - (pULTRA_RAM_NUM-1)*scale + pWEIGHT_BASE_ADDR;
                     tr.weight_data = weights[addr++];                    
@@ -74,8 +74,7 @@ class std_seq extends uvm_sequence#(transaction);
             ram_idx = 0;
             scale   = 0;
             for(int i = 0; i < pBIAS_NUM; i++) begin
-                start_item(tr);
-                    assert(tr.randomize());
+                start_item(tr);                    
                     tr.op          = MEM_BIAS_LOAD;
                     tr.weight_addr = i - ram_idx - (pBLOCK_RAM_NUM-1)*scale + pWEIGHT_BASE_ADDR + pKERNEL_NUM/pULTRA_RAM_NUM;
                     tr.weight_data = weights[addr++]; 
@@ -93,8 +92,7 @@ class std_seq extends uvm_sequence#(transaction);
             ram_idx = 0;
             scale   = 0;
             for(int i = 0; i < pDEQUANT_SCALE_NUM; i++) begin
-                start_item(tr);
-                    assert(tr.randomize());
+                start_item(tr);                    
                     tr.op          = MEM_DEQUANT_SCALE_LOAD;
                     tr.weight_addr = i - ram_idx - (pBLOCK_RAM_NUM-1)*scale + pWEIGHT_BASE_ADDR + pKERNEL_NUM/pULTRA_RAM_NUM + 1;
                     tr.weight_data = weights[addr++];
@@ -109,8 +107,7 @@ class std_seq extends uvm_sequence#(transaction);
             end
             
             // 4. Quantize Scale weights ----------------------------------------------------------------------------------------------
-            start_item(tr);
-                assert(tr.randomize());
+            start_item(tr);                
                 tr.op          = MEM_QUANT_SCALE_LOAD;
                 tr.weight_addr = tr.weight_addr + 1;
                 tr.weight_data = weights[addr++];
@@ -118,15 +115,16 @@ class std_seq extends uvm_sequence#(transaction);
     endtask
     
     // Create Data Sequence Method
-    task create_data_seq(transaction tr);
-        tr.op = LOAD_PIXELS;
-        for(int i = 0; i < trans_amount; i++) begin
+    task create_data_seq(transaction tr);                              
+        gen_conv1_input_and_rslt();                           // Call C routine
+        $readmemh(image_path, in_fm);                   // Read image to array                                           
+        for(int i = 0; i < trans_amount; i++) begin     // Create seq items
             start_item(tr);
-                /* Turn constraints on/off here */
-                assert(tr.randomize());
+                tr.op           = LOAD_PIXELS;                            
                 tr.rst          = 1'b0;                
                 tr.load_weight  = 1'b0;                
-                tr.en           = 1'b1;                
+                tr.en           = 1'b1;           
+                tr.data_in      = in_fm[i];     
                 `uvm_info("STD_SEQ", $sformatf("[No.%0d] Transaction Generated: data_in = %0h", i, tr.data_in), UVM_NONE)
             finish_item(tr);
         end

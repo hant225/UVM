@@ -20,20 +20,15 @@ class transaction extends uvm_sequence_item;
 
     // Properties
     oper_mode op;
-         logic                                rst;
-         logic                                en;        
-         logic                                load_weight;
-         logic [31:0]                         weight_addr;
-    rand logic [pWEIGHT_DATA_WIDTH-1:0]       weight_data;
-    rand logic [pDATA_WIDTH*pIN_CHANNEL-1:0]  data_in;
-         logic [pDATA_WIDTH*pOUT_CHANNEL-1:0] data_out;
-         logic                                valid;
-         logic                                done;                  
-    
-    // Constraint
-    constraint cred   {data_in[23:16] == 8'hff;}
-    constraint cblue  {data_in[15:8]  == 8'h00;}
-    constraint cgreen {data_in[7:0]   == 8'h00;}
+    logic                                rst;
+    logic                                en;        
+    logic                                load_weight;
+    logic [31:0]                         weight_addr;
+    logic [pWEIGHT_DATA_WIDTH-1:0]       weight_data;
+    logic [pDATA_WIDTH*pIN_CHANNEL-1:0]  data_in;
+    logic [pDATA_WIDTH*pOUT_CHANNEL-1:0] data_out;
+    logic                                valid;
+    logic                                done;                  
     
     // Constructor
     function new(input string path = "transaction");

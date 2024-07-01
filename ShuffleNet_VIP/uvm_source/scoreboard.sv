@@ -5,13 +5,6 @@ import my_pkg::*;
 
 //////////////////////////////////////////////////////////////////////////////////
 
-typedef logic [63:0] ultra_ram_queue [$:4];
-
-// DPI Import                                          
-import "DPI-C" function void call_pytorch();
-
-//////////////////////////////////////////////////////////////////////////////////
-
 class scoreboard extends uvm_monitor;
     // Register to Factory
     `uvm_component_utils(scoreboard)
@@ -44,7 +37,7 @@ class scoreboard extends uvm_monitor;
     virtual function void extract_phase(uvm_phase phase);
         super.extract_phase(phase);                
         for (int i = 0; i < pOUT_CHANNEL; i = i + 1) begin
-            $writememh($sformatf("%s/out_channel_%0d.txt", result_path, i), out_fm[i]);
+            $writememh($sformatf("%s/DUT_out_channel_%0d.txt", result_path, i), out_fm[i]);
         end                        
     endfunction
     
@@ -82,11 +75,11 @@ class scoreboard extends uvm_monitor;
     
     // Collect Results
     function collect_data(transaction tr);    
-        // Collect data_in if tr.en == 1'b1
+        // Double check the input image
         if(tr.en) begin
             fd = $fopen(img_data_path, "a");
             if(!fd) `uvm_fatal("SCB", "Unable to open output image data file!")
-            $fwrite(fd, "%6d %6d %6d\n", tr.data_in[23:16], tr.data_in[15:8], tr.data_in[7:0]);
+            $fwrite(fd, "%2h%2h%2h\n", tr.data_in[23:16], tr.data_in[15:8], tr.data_in[7:0]);
             $fclose(fd);
         end
     
@@ -102,7 +95,7 @@ class scoreboard extends uvm_monitor;
     // Predictor
     function predictor();   
         `uvm_info("SCB", "Predictor here", UVM_NONE);
-        call_pytorch();                    
+        // call_pytorch();                    
     endfunction
       
 endclass : scoreboard

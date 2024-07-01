@@ -43,8 +43,10 @@ class monitor extends uvm_monitor;
             else begin
                     tr.rst          = 1'b0;
                     tr.load_weight  = vif.load_weight;  
-                    tr.en           = vif.en;                                                             
-                if(vif.load_weight) begin                        // weight load process
+                    tr.en           = vif.en;                     
+                if(vif.done)                                          
+                    phase.drop_objection(this);                       // Stop Run Phase when DUT done                       
+                else if(vif.load_weight) begin                        // weight load process
                     tr.weight_addr  = vif.weight_addr;
                     tr.weight_data  = vif.weight_data;
                     tr.data_in      = 'dx;
@@ -64,10 +66,7 @@ class monitor extends uvm_monitor;
                 valid_count = valid_count + 1;
                 tr.tr_display("MON");
                 `uvm_info("MON", $sformatf("No. Valid : %0d", valid_count), UVM_NONE)
-            end            
-            
-            if(valid_count == 12543)        // out feature map
-                phase.drop_objection(this);
+            end                       
         end
     endtask: run_phase
     
