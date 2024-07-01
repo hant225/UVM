@@ -12,7 +12,8 @@ weights = ShuffleNet_V2_X0_5_QuantizedWeights.DEFAULT
 model = shufflenet_v2_x0_5(weights=weights, quantize=True)
 
 # Truy cập lớp conv1
-conv1 = model.conv1 # Lớp Conv2d đầu tiên trong Sequential của conv1
+conv1 = model.quant # Lớp Conv2d đầu tiên trong Sequential của conv1
+print(conv1)
 # maxpool = model.maxpool
 
 
@@ -134,7 +135,7 @@ conv1 = model.conv1 # Lớp Conv2d đầu tiên trong Sequential của conv1
 
 model.eval()
 
-img = read_image(".\\airplaner.jpg")
+img = read_image("../dataset/airplaner.jpg")
 
 # Step 2: Initialize the inference transforms
 preprocess = weights.transforms(antialias=True)
@@ -173,7 +174,7 @@ print(f"{category_name}: {100 * score}%")
 
 def save_conv1_output(module, input, output):
     # output is a quantized tensor with datatype like torch.quint8
-    data = input[0].int_repr()  # Get integer representation of the quantized data
+    # data = input[0].int_repr()  # Get integer representation of the quantized data
     # Mở file để ghi
     # with open("D:\Workspace\Learning\KLTN\code\software\ShuffleNet_V2\data\pixels\ShuffleUnit_Short_stage2_1.txt", "w") as txt_file:
     #     # Chuyển đổi và ghi dữ liệu
@@ -190,25 +191,36 @@ def save_conv1_output(module, input, output):
     #             txt_file.write(''.join(line) + '\n')  # Ghi vào file
     # =========================================================================================
     # Convert it to integer representation
+    print(output)
     output_int = output.int_repr()
-    
+    print(output_int)
     # Move the tensor to cpu
-    output_int = output_int.detach().cpu()
+    #output_int = output_int.detach().cpu()
 
     #Flatten the tensor to one dimension per channel
-    batch_size, num_channels, height, width = output_int.shape
-    flattened_outputs = output_int.view(batch_size, num_channels, -1)
+    #batch_size, num_channels, height, width = output_int.shape
+    #flattened_outputs = output_int.view(batch_size, num_channels, -1)
     
     # Save each channel's data to a text file
-    for i, channel_data in enumerate(flattened_outputs[0]):
-        with open(f'D:\Workspace\Learning\KLTN\code\software\ShuffleNet_V2\\results\ShuffleUnit_Short_stage2_1\Software\output_quant\\out_channel_{i}.txt', 'w') as f:
+    # for i, channel_data in enumerate(flattened_outputs[0]):
+    #    with open(f'D:\Workspace\Learning\KLTN\code\software\ShuffleNet_V2\\results\ShuffleUnit_Short_stage2_1\Software\output_quant\\out_channel_{i}.txt', 'w') as f:
             # Write the data for the current channel to a file
-            f.write('\n'.join(map(str, channel_data.numpy())))
+     #       f.write('\n'.join(map(str, channel_data.numpy())))
 
-# Kiểm tra xem model có thuộc tính conv1 không
-if hasattr(model, 'conv1'):
+#############################################################################################
+############### Kiểm tra xem model có thuộc tính conv1 không ################################
+################################## HAO NOTES ################################################
+#                                                                                           #
+# Change the text to:  conv1, quant, maxpool, stage2, stage3, stage4, conv5, fc, dequant    #
+# if want to get the hook to which stage                                                    #
+#                                                                                           #
+#############################################################################################
+if hasattr(model, 'quant'):  
     # Đăng ký hook cho layer conv1
     conv1.register_forward_hook(save_conv1_output)
+#############################################################################################
+#############################################################################################
+
 # 
 # if hasattr(model, 'stage2') and \
 #    hasattr(model.stage2, '2') and \
@@ -224,8 +236,8 @@ if hasattr(model, 'conv1'):
 
 
 # Tính toán đầu ra với batch đầu vào
-with torch.no_grad():
-    output = model(batch)
+#with torch.no_grad():
+#    output = model(batch)
 
 
 
@@ -269,12 +281,19 @@ def extract_quant_output(module, input, output):
 #     output = model(batch)
 
 #=============================================export data===================================================
+ 
+# ##################################################################################################### 
+# ###                                                                                               ### 
+# ###  Hao note: Doan code ben duoi de combine 3 kenh anh cua 1 pixel thanh 1 dong trong output     ### 
+# ###  Vi du: O pixel dau tien vi tri 0x0 co  R = 79, G = 71, B = 6a => pixel1 = 79716a             ### 
+# ###                                                                                               ### 
+# ##################################################################################################### 
 
 # Định nghĩa hook
 def extract_quant_output(module, input, output):
     data = output.int_repr()  # Get integer representation of the quantized data
     # Mở file để ghi
-    with open("D:\Workspace\Learning\KLTN\code\software\ShuffleNet_V2\data\pixels\pixel_image.txt", "w") as txt_file:
+    with open("./pixel_image.txt", "w") as txt_file:
         # Chuyển đổi và ghi dữ liệu
         channels = data.shape[1]  # Số kênh
         height = data.shape[2]    # Chiều cao
@@ -293,8 +312,8 @@ def extract_quant_output(module, input, output):
 #     model.quant.register_forward_hook(extract_quant_output)
 
 # # Đưa tensor qua mô hình và quan sát đầu ra từ hook
-# with torch.no_grad():
-#     output = model(batch)
+with torch.no_grad():
+     output = model(batch)
     
 #================================================================================================
 
