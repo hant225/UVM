@@ -4,8 +4,7 @@
 #include <math.h>
 
 
-void call_pytorch() {
-    system("/usr/bin/python3 /home/hao/Documents/0.KHOA_LUAN_TOT_NGHIEP/shuffle_net/cnn_my_verification/Python_files/generate_image.py");
-    system("/usr/bin/python3 /home/hao/Documents/0.KHOA_LUAN_TOT_NGHIEP/shuffle_net/cnn_my_verification/Python_files/conv1_quantizedModel.py");
+void gen_conv1_input_and_rslt() {
+    system("/usr/bin/python3 /home/hao/Documents/0.KHOA_LUAN_TOT_NGHIEP/shuffle_net/cnn_my_verification/Python_files/conv1_randIimg_and_refModel.py");
 }
 
