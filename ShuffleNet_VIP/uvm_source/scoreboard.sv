@@ -5,6 +5,10 @@ import my_pkg::*;
 
 //////////////////////////////////////////////////////////////////////////////////
 
+import "DPI-C" function void golden_model();
+
+//////////////////////////////////////////////////////////////////////////////////
+
 class scoreboard extends uvm_monitor;
     // Register to Factory
     `uvm_component_utils(scoreboard)
@@ -94,8 +98,8 @@ class scoreboard extends uvm_monitor;
     
     // Predictor
     function predictor();   
-        `uvm_info("SCB", "Predictor here", UVM_NONE);
-        // call_pytorch();                    
+        `uvm_info("SCB", "Start checking result..", UVM_NONE);
+        golden_model();                   
     endfunction
       
 endclass : scoreboard
